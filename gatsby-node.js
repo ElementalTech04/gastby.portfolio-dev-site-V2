@@ -9,12 +9,15 @@ exports.createPages = ({ actions, graphql }) => {
 
   return graphql(`
     {
-      allMarkdownRemark(sort: {order: DESC, fields: [frontmatter___date]}) {
+      allMarkdownRemark(sort: {order: DESC, fields: [frontmatter___title]}) {
         edges {
           node {
             frontmatter {
               path
-              tags
+              title
+              cover {
+                absolutePath
+              }
             }
             fileAbsolutePath
           }
@@ -26,19 +29,23 @@ exports.createPages = ({ actions, graphql }) => {
 
     const { allMarkdownRemark } = result.data;
 
-    /* Post pages */
+    /* Project pages */
     allMarkdownRemark.edges.forEach(({ node }) => {
       // Check path prefix of post
-      if (node.frontmatter.path.indexOf(config.pages.blog) !== 0) {
+      if (node.frontmatter.path.indexOf(config.pages.project) !== 0) {
         // eslint-disable-next-line no-throw-literal
         throw `Invalid path prefix: ${node.frontmatter.path}`;
       }
 
       createPage({
         path: node.frontmatter.path,
-        component: path.resolve('src/templates/post/post.jsx'),
+        component: path.resolve('src/templates/project/index.jsx'),
         context: {
+          name: node.frontmatter.title,
+          img: node.frontmatter.cover.absolutePath,
           postPath: node.frontmatter.path,
+          project: node.fileAbsolutePath,
+          projectSlug: node.frontmatter.path,
           translations: utils.getRelatedTranslations(node, allMarkdownRemark.edges),
         },
       });
@@ -47,23 +54,29 @@ exports.createPages = ({ actions, graphql }) => {
     // Posts in default language, excluded the translated versions
     const defaultPosts = allMarkdownRemark.edges
       .filter(({ node: { fileAbsolutePath } }) => fileAbsolutePath.match(regexForIndex));
-
-    /* Tag pages */
-    const allTags = [];
+      console.log(JSON.stringify(defaultPosts))
+    /* project pages */
+    const allPosts = [];
     defaultPosts.forEach(({ node }) => {
-      node.frontmatter.tags.forEach((tag) => {
-        if (allTags.indexOf(tag) === -1) allTags.push(tag);
-      });
+      
+      if(allPosts.length == 0){
+        allPosts.push(node)
+      } else {
+        allPosts.forEach((project) => {
+          if(project.fileAbsolutePath.match((node.fileAbsolutePath) === -1)) allPosts.push(node);
+        });
+      }
     });
-
-    allTags
-      .forEach((tag) => {
+    console.log(JSON.stringify(allPosts))
+    allPosts
+      .forEach((project) => {
         createPage({
-          path: utils.resolvePageUrl(config.pages.tag, tag),
-          component: path.resolve('src/templates/tags/index.jsx'),
+          path: utils.resolvePageUrl(project.frontmatter.path),
+          component: path.resolve('src/templates/project/index.jsx'),
           context: {
-            tag,
-          },
+            project: project.fileAbsolutePath,
+            projectSlug: project.frontmatter.path
+          }
         });
       });
 

@@ -14,6 +14,7 @@ import './highlight-syntax.less';
 import style from './post.module.less';
 
 const Post = ({ data }) => {
+  console.log(data)
   const { html, frontmatter } = data.markdownRemark;
   const {
     title, cover: { childImageSharp: { fluid } }, excerpt, path,
@@ -56,9 +57,8 @@ export const pageQuery = graphql`
       timeToRead
       frontmatter {
         title
-        date(formatString: "DD MMM YYYY")
-        tags
         path
+        id
         excerpt
         cover {
           childImageSharp {
@@ -80,8 +80,8 @@ export const pageQuery = graphql`
           frontmatter {
             path
             title
-            tags
             excerpt
+            id
             cover {
               childImageSharp {
                 fluid(maxWidth: 600) {

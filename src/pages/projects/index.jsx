@@ -8,43 +8,38 @@ import { graphql } from 'gatsby';
 import Header from '../../components/PageLayout/Header';
 import SEO from '../../components/Seo';
 import SidebarWrapper from '../../components/PageLayout/Sidebar';
-import TagCard from '../../components/TagCard';
+import ProjectCard from '../../components/ProjectCard';
 import Config from '../../../config';
 
-const Tags = ({ data }) => {
-  const { allFile: { edges } } = data;
-  const rawTags = data.allMarkdownRemark.edges
-    .map((edge) => edge.node.frontmatter.tags)
-    .reduce((prev, curr) => prev.concat(curr));
-  rawTags
-    .filter((tag, index) => index === rawTags.indexOf(tag))
-    .sort(); // Remove duplicates and sort values
-  // const tagPage = Config.pages.tag;
-  const tagData = Config.tags;
+
+const Projects = ({ data }) => {
+  const { allMarkdownRemark: { edges } } = data;
+console.log(edges)
+
   return (
     <Layout className="outerPadding">
       <Layout className="container">
         <Header />
         <SEO
-          title="Tags"
-          description="This page consists of various Tags on various technologies that I'll be using
-          to write blogs. You can check the blogs related to the tags by clicking on any of the tags below."
-          path="tags"
+          title="Projects"
+          description="This page consists various Projects on various technologies that I have worked on over the course of my career. You can read more about the projects by clicking on any of the cards below."
+          path="projects"
         />
         <SidebarWrapper>
           <>
             <div className="marginTopTitle">
-              <h1 className="titleSeparate">#Tags</h1>
+              <h1 className="titleSeparate">Projects</h1>
             </div>
             <Row gutter={[30, 20]}>
               {
-                edges.map((val) => (
-                  <Col key={val.node.name} xs={24} sm={24} md={12} lg={8}>
-                    <TagCard
-                      img={val.node.childImageSharp.fluid.src}
-                      name={val.node.name}
-                      description={tagData[val.node.name].description}
-                      color={tagData[val.node.name].color}
+                edges.map((value, idx) => (
+                  <Col key={value.node.id} xs={24} sm={24} md={12} lg={8}>
+                    <ProjectCard
+                      path={value.node.frontmatter.path}
+                      img={value.node.frontmatter.cover.childImageSharp.fluid.src}
+                      name={value.node.frontmatter.title}
+                      id={value.node.frontmatter.id}
+                      description={value.node.frontmatter.excerpt}
                     />
                   </Col>
                 ))
@@ -57,14 +52,14 @@ const Tags = ({ data }) => {
   );
 };
 
-Tags.propTypes = {
+Projects.propTypes = {
   data: PropTypes.shape({
     allMarkdownRemark: PropTypes.shape({
       edges: PropTypes.arrayOf(
         PropTypes.shape({
           node: PropTypes.shape({
             frontmatter: PropTypes.shape({
-              tags: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+              id: PropTypes.string.isRequired,
             }).isRequired,
           }).isRequired,
         }).isRequired,
@@ -85,23 +80,35 @@ Tags.propTypes = {
   }).isRequired,
 };
 
-export const query = graphql`
-  {
-    allMarkdownRemark(filter: { fileAbsolutePath: { regex: "/index.md$/" } }) {
+export const pageQuery = graphql`
+  query {
+    allMarkdownRemark(
+      sort: { fields: [frontmatter___title], order: DESC }
+    ) {
       edges {
         node {
           frontmatter {
-            tags
+            title
+            path
+            excerpt
+            id
+            cover {
+              childImageSharp {
+                fluid(maxWidth: 600) {
+                  ...GatsbyImageSharpFluid_tracedSVG
+                }
+              }
+            }
           }
         }
       }
     }
-    allFile(filter: { relativeDirectory: { eq: "tags" } }) {
+    allFile(filter: { dir: { regex: "/projects$/" } }) {
       edges {
         node {
           name
           childImageSharp {
-            fluid(maxWidth: 400) {
+            fluid(maxHeight: 600) {
               ...GatsbyImageSharpFluid_tracedSVG
             }
           }
@@ -111,4 +118,5 @@ export const query = graphql`
   }
 `;
 
-export default Tags;
+
+export default Projects;

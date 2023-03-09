@@ -14,45 +14,59 @@ import PostCard from '../../components/PostCard';
 import SidebarWrapper from '../../components/PageLayout/Sidebar';
 import Config from '../../../config';
 import Utils from '../../utils/pageUtils';
-import style from './tags.module.less';
+import style from './projects.module.less';
+import { useState, useEffect } from 'react';
+import { useHashNodePosts } from '../../utils/hooks';
 
-const TagPage = ({ data, pageContext }) => {
-  const { tag } = pageContext;
-  const tagName = Config.tags[tag].name || Utils.capitalize(tag);
-  const tagPagePath = Config.pages.tag;
-  const tagImage = data.allFile.edges.find((edge) => edge.node.name === tag).node
-    .childImageSharp.fluid;
-  const posts = data.allMarkdownRemark.edges;
+const ProjectPage = ({ pageContext, path }) => {
+  const [posts, setPosts] = useState([]);
+  const [projectName, setProjectName] = useState(pageContext.name);
+  const [projectPagePath, setProjectPagePath] = useState(path);
+  const [projectImage, setProjectImage] = useState(pageContext.img);
+  const [projectId, setProjectId] = useState(pageContext.id);
+  const [projectExcerpt, setProjectExcerpt] = useState(pageContext.excerpt);
+  const [hashNodeQuery, setHashNodeQuery] = useState()
+  let promisedData = useHashNodePosts(projectId, 0);
+  useEffect(() => {
+  promisedData.then(resp => {
+    setPosts(resp)
+  }).catch(err => console.error(err));
+  }, [promisedData]);
+console.log(projectImage)
   return (
     <Layout className="outerPadding">
       <Layout className="container">
         <Header />
         <SEO
-          title={tagName}
-          description={`All post about ${tagName}. ${Config.tags[tag].description} `}
-          path={Utils.resolvePageUrl(tagPagePath, tag)}
-          keywords={[tagName]}
+          title={projectName}
+          description={`All post about ${projectName}. project.description} `}
+          path={Utils.resolvePageUrl(projectPagePath)}
+          keywords={[projectName]}
         />
         <SidebarWrapper>
-          <div className={`marginTopTitle ${style.tagsList}`}>
+          <div className={`marginTopTitle ${style.projectsList}`}>
             <h1>
-              #
-              {tagName}
+              
+              {projectName}
             </h1>
             <div className={style.bannerImgContainer}>
-              <Img className={style.bannerImg} fluid={tagImage} alt={tagName} />
+              <Img
+              fluid={projectImage}
+              alt={projectName}
+            />
             </div>
             <h4 className="textCenter">
-              {Config.tags[tag].description}
+              {projectExcerpt}
             </h4>
           </div>
           <Row gutter={[20, 20]}>
-            {posts.map((post, key) => (
+            {posts.length > 0 ? posts.map((post, key) => (
             // eslint-disable-next-line react/no-array-index-key
               <Col key={key} xs={24} sm={24} md={12} lg={8}>
                 <PostCard data={post} />
               </Col>
-            ))}
+
+            )): <h1>No Posts Yet</h1>}
           </Row>
         </SidebarWrapper>
       </Layout>
@@ -60,7 +74,7 @@ const TagPage = ({ data, pageContext }) => {
   );
 };
 
-TagPage.propTypes = {
+ProjectPage.propTypes = {
   data: PropTypes.shape({
     allMarkdownRemark: PropTypes.shape({
       edges: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -79,27 +93,25 @@ TagPage.propTypes = {
     }).isRequired,
   }).isRequired,
   pageContext: PropTypes.shape({
-    tag: PropTypes.string.isRequired,
+    project: PropTypes.string.isRequired,
   }).isRequired,
 };
 
 export const pageQuery = graphql`
-  query($tag: String!) {
+  query($project: String!) {
     allMarkdownRemark(
       filter: {
-        frontmatter: { tags: { in: [$tag] } }
         fileAbsolutePath: { regex: "/index.md$/" }
       }
-      sort: { fields: [frontmatter___date], order: DESC }
+      sort: { fields: [frontmatter___title], order: DESC }
     ) {
       edges {
         node {
           frontmatter {
             title
-            date(formatString: "MMMM DD, YYYY")
             path
-            tags
             excerpt
+            id
             cover {
               childImageSharp {
                 fluid(maxWidth: 600) {
@@ -111,7 +123,7 @@ export const pageQuery = graphql`
         }
       }
     }
-    allFile(filter: { name: { eq: $tag }, dir: { regex: "/tags$/" } }) {
+    allFile(filter: { dir: { eq: $project } }) {
       edges {
         node {
           name
@@ -126,4 +138,19 @@ export const pageQuery = graphql`
   }
 `;
 
-export default TagPage;
+export const hashNodeQuery = `query {
+  user(username: "travistech04") {
+    publication {
+      posts(page: 0) {
+        title
+        coverImage
+        dateAdded
+        totalReactions
+        brief
+        slug
+      }
+    }
+  }
+}`;
+
+export default ProjectPage;

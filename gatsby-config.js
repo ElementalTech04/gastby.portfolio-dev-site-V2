@@ -4,6 +4,10 @@
  * See: https://www.gatsbyjs.org/docs/gatsby-config/
  */
 
+ require("dotenv").config({
+  path: `.env`,
+ })
+
 const config = require('./config');
 const plugins = require('./gatsby-config.plugins');
 
@@ -15,5 +19,5 @@ module.exports = {
     title: config.siteTitle,
     description: config.siteDescription,
   },
-  plugins,
+  plugins
 };
